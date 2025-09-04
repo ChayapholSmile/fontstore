@@ -3,7 +3,6 @@
 import type React from "react"
 import { Work_Sans, Open_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { LanguageProvider } from "@/lib/contexts/LanguageContext"
 import { AuthProvider } from "@/lib/contexts/AuthContext"
@@ -29,7 +28,7 @@ export default function ClientLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const searchParams = useSearchParams()
+  // Removed useSearchParams usage that was causing Suspense boundary error
 
   return (
     <html lang="en" className={`${workSans.variable} ${openSans.variable}`}>
