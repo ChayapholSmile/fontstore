@@ -3,9 +3,18 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { authAPI, type AuthState } from "@/lib/auth-client"
 
+interface RegisterData {
+  email: string
+  password: string
+  username: string
+  displayName: string
+  role: "buyer" | "seller"
+  language: "en" | "th" | "zh"
+}
+
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, name: string, role: "buyer" | "seller") => Promise<void>
+  register: (data: RegisterData) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -49,11 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const register = async (email: string, password: string, name: string, role: "buyer" | "seller") => {
+  const register = async (data: RegisterData) => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }))
-      await authAPI.register(email, password, name, role)
-      await refreshUser()
+      await authAPI.register(data)
+      await login(data.email, data.password)
     } catch (error) {
       setState((prev) => ({
         ...prev,

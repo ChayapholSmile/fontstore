@@ -12,6 +12,15 @@ export interface AuthState {
   error: string | null
 }
 
+interface RegisterData {
+  email: string
+  password: string
+  username: string
+  displayName: string
+  role: "buyer" | "seller"
+  language: "en" | "th" | "zh"
+}
+
 export const authAPI = {
   async login(email: string, password: string) {
     const response = await fetch("/api/auth/login", {
@@ -28,11 +37,11 @@ export const authAPI = {
     return response.json()
   },
 
-  async register(email: string, password: string, name: string, role: "buyer" | "seller") {
+  async register(data: RegisterData) {
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name, role }),
+      body: JSON.stringify(data),
     })
 
     if (!response.ok) {

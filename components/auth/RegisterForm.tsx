@@ -38,7 +38,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     }
 
     try {
-      await register(formData.email, formData.password, formData.displayName, formData.role)
+      await register(formData)
 
       if (onSuccess) {
         onSuccess()
