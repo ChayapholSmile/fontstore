@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { verifyToken } from "@/lib/auth-utils"
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value
@@ -22,13 +21,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/auth/login", request.url))
     }
 
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      if (isProtectedApiRoute) {
-        return NextResponse.json({ error: "Invalid token" }, { status: 401 })
-      }
-      return NextResponse.redirect(new URL("/auth/login", request.url))
-    }
+    // Token verification will be handled in individual API routes and pages
   }
 
   return NextResponse.next()

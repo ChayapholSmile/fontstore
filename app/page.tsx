@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,18 +11,21 @@ import type { Font } from "@/lib/models/User"
 import { useLanguage } from "@/lib/contexts/LanguageContext"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { NotificationCenter } from "@/components/NotificationCenter"
-import { t } from "@/lib/i18n" // Import the t function
+import { t } from "@/lib/i18n"
+import { useSearchParams } from "next/navigation"
 
-export default function HomePage() {
+function HomePageContent() {
   const [featuredFonts, setFeaturedFonts] = useState<Font[]>([])
   const [popularFonts, setPopularFonts] = useState<Font[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const { language } = useLanguage() // Use language from context
+  const { language } = useLanguage()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    fetchHomepageData()
-  }, [])
+    const query = searchParams.get("q") || ""
+    setSearchQuery(query)
+  }, [searchParams])
 
   const fetchHomepageData = async () => {
     try {
@@ -42,6 +45,10 @@ export default function HomePage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchHomepageData()
+  }, [])
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -456,5 +463,13 @@ function FontCard({ font }: FontCardProps) {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>}>
+      <HomePageContent />
+    </Suspense>
   )
 }
