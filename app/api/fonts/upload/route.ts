@@ -25,39 +25,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Seller access required" }, { status: 403 })
     }
 
-    const formData = await request.formData()
-    const fontDataString = formData.get("fontData") as string
-    const fontData = JSON.parse(fontDataString)
+    const { fontData, fontFiles, previewImages } = await request.json()
 
-    // In a real implementation, you would:
-    // 1. Upload files to cloud storage (AWS S3, Cloudinary, etc.)
-    // 2. Process and validate font files
-    // 3. Generate thumbnails and previews
-    // 4. Scan for malware
-
-    // For now, we'll simulate file processing
-    const fontFiles = []
-    const previewImages = []
-
-    // Process font files
-    let fileIndex = 0
-    while (formData.get(`fontFile_${fileIndex}`)) {
-      const file = formData.get(`fontFile_${fileIndex}`) as File
-      fontFiles.push({
-        format: file.name.split(".").pop()?.toLowerCase() as "otf" | "ttf" | "woff" | "woff2",
-        fileUrl: `/uploads/fonts/${Date.now()}_${file.name}`,
+    // Map the received data to the format expected by the database schema
+    const processedFontFiles = fontFiles.map(
+      (file: { format: string; dataUrl: string; size: number }) => ({
+        format: file.format,
+        fileUrl: file.dataUrl, // Store the entire Data URL
         fileSize: file.size,
-      })
-      fileIndex++
-    }
+      }),
+    )
 
-    // Process preview images
-    let imageIndex = 0
-    while (formData.get(`previewImage_${imageIndex}`)) {
-      const file = formData.get(`previewImage_${imageIndex}`) as File
-      previewImages.push(`/uploads/previews/${Date.now()}_${file.name}`)
-      imageIndex++
-    }
+    const processedPreviewImages = previewImages.map((image: { dataUrl: string }) => image.dataUrl)
 
     const font: Font = {
       name: fontData.name,
@@ -69,8 +48,8 @@ export async function POST(request: NextRequest) {
       price: fontData.isFree ? 0 : Number.parseFloat(fontData.price),
       originalPrice: fontData.originalPrice ? Number.parseFloat(fontData.originalPrice) : undefined,
       isFree: fontData.isFree,
-      fontFiles,
-      previewImages,
+      fontFiles: processedFontFiles,
+      previewImages: processedPreviewImages,
       supportedLanguages: fontData.supportedLanguages,
       downloads: 0,
       rating: 0,
@@ -102,6 +81,19 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Font upload error:", error)
+    // Handle potential JSON body size errors, which are more likely with Data URLs
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Request body is too large or malformed." }, { status: 413 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+}
+
+// Increase the default body size limit for this specific route
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Set a higher limit, e.g., 10MB
+    },
+  },
 }
