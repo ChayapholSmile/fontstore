@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, Search, MoreVertical, Paperclip, DollarSign, Check, X, Download, MessageCircle } from "lucide-react"
+import { Send, Search, MoreVertical, Paperclip, DollarSign, Check, X, Download, MessageCircle, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import type { ChatMessage } from "@/lib/models/User"
+import { useSearchParams } from "next/navigation"
 
 interface Conversation {
   _id: string
@@ -24,6 +25,7 @@ interface Conversation {
 }
 
 export default function ChatPage() {
+  const searchParams = useSearchParams()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -31,6 +33,13 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const conversationIdFromUrl = searchParams.get("conversationId")
+    if (conversationIdFromUrl) {
+      setSelectedConversation(conversationIdFromUrl)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchCurrentUser()
@@ -105,44 +114,23 @@ export default function ChatPage() {
     }
   }
 
-  const sendPaymentRequest = async (fontId: string, amount: number) => {
-    if (!selectedConversation) return
-
+  const handleApprovePayment = async (orderId: string) => {
     try {
-      const response = await fetch("/api/chat/messages", {
+      const response = await fetch(`/api/orders/${orderId}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId: selectedConversation,
-          message: `Payment request for font: $${amount}`,
-          messageType: "payment-request",
-          paymentRequest: { fontId, amount, status: "pending" },
-        }),
       })
 
       if (response.ok) {
-        fetchMessages(selectedConversation)
-        fetchConversations()
-      }
-    } catch (error) {
-      console.error("Error sending payment request:", error)
-    }
-  }
-
-  const handlePaymentResponse = async (messageId: string, action: "accept" | "decline") => {
-    try {
-      const response = await fetch("/api/chat/payment-response", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messageId, action }),
-      })
-
-      if (response.ok) {
+        alert("Payment approved!")
         fetchMessages(selectedConversation!)
         fetchConversations()
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to approve payment.")
       }
     } catch (error) {
-      console.error("Error handling payment response:", error)
+      console.error("Error approving payment:", error)
+      alert("An error occurred while approving payment.")
     }
   }
 
@@ -299,7 +287,8 @@ export default function ChatPage() {
                           key={message._id?.toString()}
                           message={message}
                           isOwn={message.senderId.toString() === currentUser?._id}
-                          onPaymentResponse={handlePaymentResponse}
+                          currentUser={currentUser}
+                          onApprovePayment={handleApprovePayment}
                         />
                       ))}
                       <div ref={messagesEndRef} />
@@ -312,9 +301,6 @@ export default function ChatPage() {
                   <div className="flex items-center space-x-2">
                     <Button variant="ghost" size="sm">
                       <Paperclip className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <DollarSign className="w-4 h-4" />
                     </Button>
                     <Input
                       placeholder="Type a message..."
@@ -348,15 +334,16 @@ export default function ChatPage() {
 interface MessageBubbleProps {
   message: ChatMessage
   isOwn: boolean
-  onPaymentResponse: (messageId: string, action: "accept" | "decline") => void
+  currentUser: any
+  onApprovePayment: (orderId: string) => void
 }
 
-function MessageBubble({ message, isOwn, onPaymentResponse }: MessageBubbleProps) {
+function MessageBubble({ message, isOwn, currentUser, onApprovePayment }: MessageBubbleProps) {
   const isPaymentRequest = message.messageType === "payment-request"
 
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[70%] ${isOwn ? "order-2" : "order-1"}`}>
+      <div className={`max-w-[70%]`}>
         <div
           className={`rounded-lg p-3 ${
             isOwn
@@ -374,34 +361,25 @@ function MessageBubble({ message, isOwn, onPaymentResponse }: MessageBubbleProps
               </div>
               <p className="text-sm text-yellow-700">{message.message}</p>
               <div className="text-lg font-bold text-yellow-800">${message.paymentRequest?.amount}</div>
-              {!isOwn && message.paymentRequest?.status === "pending" && (
-                <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    onClick={() => onPaymentResponse(message._id!.toString(), "accept")}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Check className="w-4 h-4 mr-1" />
-                    Accept
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onPaymentResponse(message._id!.toString(), "decline")}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Decline
-                  </Button>
-                </div>
+
+              {/* Seller's view */}
+              {currentUser?.role === "seller" && !isOwn && message.paymentRequest?.status === "pending" && (
+                <Button size="sm" onClick={() => onApprovePayment(message.paymentRequest!.orderId!.toString())}>
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  Approve Payment
+                </Button>
               )}
+
+              {/* Buyer's view */}
+              {isOwn && message.paymentRequest?.status === "pending" && (
+                <Badge variant="outline">Awaiting seller approval</Badge>
+              )}
+
+              {/* Both views after completion */}
               {message.paymentRequest?.status === "paid" && (
                 <div className="flex items-center space-x-2 text-green-600">
                   <Check className="w-4 h-4" />
                   <span className="text-sm font-medium">Payment Completed</span>
-                  <Button size="sm" variant="outline">
-                    <Download className="w-4 h-4 mr-1" />
-                    Download
-                  </Button>
                 </div>
               )}
             </div>
