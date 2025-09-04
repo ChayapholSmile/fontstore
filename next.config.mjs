@@ -11,16 +11,16 @@ const nextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: [
-      'mongodb', 
-      'mongoose', 
-      'bcryptjs', 
-      'jsonwebtoken',
-      'snappy',
-      '@mongodb-js/zstd',
-      'kerberos',
-      'mongodb-client-encryption',
-      'gcp-metadata'
-    ]
+      "mongodb",
+      "mongoose",
+      "bcryptjs",
+      "jsonwebtoken",
+      "snappy",
+      "@mongodb-js/zstd",
+      "kerberos",
+      "mongodb-client-encryption",
+      "gcp-metadata",
+    ],
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -40,16 +40,17 @@ const nextConfig = {
         os: false,
         path: false,
       }
-      
+
       config.externals = config.externals || []
       config.externals.push({
-        'mongodb': 'commonjs mongodb',
-        'bcryptjs': 'commonjs bcryptjs',
-        'jsonwebtoken': 'commonjs jsonwebtoken',
-        'snappy': 'commonjs snappy',
+        mongodb: "commonjs mongodb",
+        bcryptjs: "commonjs bcryptjs",
+        jsonwebtoken: "commonjs jsonwebtoken",
+        snappy: "commonjs snappy",
+        aws4: "commonjs aws4", // Added aws4 to externals to resolve warning
       })
     }
-    
+
     return config
   },
 }
