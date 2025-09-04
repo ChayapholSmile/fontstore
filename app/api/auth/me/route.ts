@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifyToken } from "@/lib/auth"
+import { verifyToken } from "@/lib/auth-utils"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 

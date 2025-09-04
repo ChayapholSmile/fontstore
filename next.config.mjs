@@ -10,18 +10,44 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
-    serverComponentsExternalPackages: ['mongodb', 'mongoose']
+    serverComponentsExternalPackages: [
+      'mongodb', 
+      'mongoose', 
+      'bcryptjs', 
+      'jsonwebtoken',
+      'snappy',
+      '@mongodb-js/zstd',
+      'kerberos',
+      'mongodb-client-encryption',
+      'gcp-metadata'
+    ]
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Don't resolve 'fs' module on the client to prevent this error on build --> Error: Can't resolve 'fs'
       config.resolve.fallback = {
         fs: false,
         net: false,
         dns: false,
         child_process: false,
         tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
       }
+      
+      config.externals = config.externals || []
+      config.externals.push({
+        'mongodb': 'commonjs mongodb',
+        'bcryptjs': 'commonjs bcryptjs',
+        'jsonwebtoken': 'commonjs jsonwebtoken',
+        'snappy': 'commonjs snappy',
+      })
     }
     
     return config

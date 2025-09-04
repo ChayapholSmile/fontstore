@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
-import { verifyToken } from "@/lib/auth"
+import { verifyToken } from "@/lib/auth-utils"
 import { ObjectId } from "mongodb"
 import type { Font } from "@/lib/models/User"
 

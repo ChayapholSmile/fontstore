@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createUser } from "@/lib/auth"
+import { createUser } from "@/lib/auth-server"
 import { getDatabase } from "@/lib/mongodb"
 
 export async function POST(request: NextRequest) {
