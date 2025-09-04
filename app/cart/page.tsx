@@ -79,11 +79,15 @@ export default function CartPage() {
 
       if (response.ok) {
         const data = await response.json()
-        // Redirect to payment or success page
-        window.location.href = data.redirectUrl || "/orders"
+        alert(data.message)
+        window.location.href = data.redirectUrl || "/chat"
+      } else {
+        const error = await response.json()
+        alert(error.error || "Checkout failed. Please try again.")
       }
     } catch (error) {
       console.error("Error during checkout:", error)
+      alert("An unexpected error occurred during checkout.")
     } finally {
       setProcessing(false)
     }
@@ -235,13 +239,12 @@ export default function CartPage() {
 
                   <Button className="w-full" size="lg" onClick={checkout} disabled={processing}>
                     <CreditCard className="w-4 h-4 mr-2" />
-                    {processing ? "Processing..." : "Proceed to Checkout"}
+                    {processing ? "Processing..." : "Contact Seller to Pay"}
                   </Button>
 
                   <div className="text-xs text-muted-foreground space-y-1">
-                    <p>• Instant download after payment</p>
-                    <p>• Commercial license included</p>
-                    <p>• 30-day money-back guarantee</p>
+                    <p>• You will be redirected to a chat with the seller.</p>
+                    <p>• Finalize payment and receive your font directly.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -252,3 +255,4 @@ export default function CartPage() {
     </div>
   )
 }
+
