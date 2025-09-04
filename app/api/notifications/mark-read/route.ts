@@ -3,9 +3,11 @@ import { connectDB } from "@/lib/mongodb"
 import { verifyToken } from "@/lib/auth-utils"
 import { ObjectId } from "mongodb"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
