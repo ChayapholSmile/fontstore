@@ -78,6 +78,31 @@ export default function FontDetailPage() {
     }
   }
 
+  const handleBuyNow = async () => {
+    if (!user) {
+      router.push("/auth/login")
+      return
+    }
+    try {
+      // First, add to cart
+      const cartResponse = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fontId: font?._id }),
+      })
+
+      if (!cartResponse.ok) {
+        throw new Error("Could not add font to cart.")
+      }
+
+      // Then, redirect to cart for checkout
+      router.push("/cart")
+    } catch (error) {
+      console.error("Buy Now error:", error)
+      alert("Could not proceed with purchase. Please try adding to cart manually.")
+    }
+  }
+
   const handleFreeDownload = () => {
     if (!font || !font.fontFiles || font.fontFiles.length === 0) {
       alert("No font file available for download.")
@@ -456,7 +481,7 @@ export default function FontDetailPage() {
                       <ShoppingCart className="w-4 h-4 mr-2" />
                       Add to Cart
                     </Button>
-                    <Button variant="outline" className="w-full bg-transparent">
+                    <Button variant="outline" className="w-full bg-transparent" onClick={handleBuyNow}>
                       Buy Now
                     </Button>
                   </>
@@ -513,3 +538,4 @@ export default function FontDetailPage() {
     </div>
   )
 }
+
