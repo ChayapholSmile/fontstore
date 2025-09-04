@@ -5,6 +5,9 @@ import { ObjectId } from "mongodb"
 import type { Font } from "@/lib/models/User"
 import { notifyNewFont } from "@/lib/discord"
 
+// Set the max duration for this specific route
+export const maxDuration = 60; // 60 seconds
+
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value
@@ -89,11 +92,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Increase the default body size limit for this specific route
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb', // Set a higher limit, e.g., 10MB
-    },
-  },
-}
