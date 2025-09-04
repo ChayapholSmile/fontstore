@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download } from "lucide-react"
 
 interface FontPreviewGeneratorProps {
   text: string
@@ -16,39 +15,6 @@ export default function FontPreviewGenerator({ text, fontSize, fontName }: FontP
   const [backgroundColor, setBackgroundColor] = useState("#ffffff")
   const [textColor, setTextColor] = useState("#000000")
   const [previewStyle, setPreviewStyle] = useState("normal")
-
-  const generatePreviewImage = async () => {
-    try {
-      const response = await fetch("/api/font-preview", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text,
-          fontSize,
-          fontName,
-          backgroundColor,
-          textColor,
-          style: previewStyle,
-        }),
-      })
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `${fontName}-preview.png`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }
-    } catch (error) {
-      console.error("Error generating preview:", error)
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -66,7 +32,7 @@ export default function FontPreviewGenerator({ text, fontSize, fontName }: FontP
               className="text-center break-words max-w-full"
               style={{
                 fontSize: `${fontSize}px`,
-                fontFamily: "system-ui", // This would be replaced with actual font
+                fontFamily: `'${fontName}', system-ui, sans-serif`,
                 fontWeight: previewStyle === "bold" ? "bold" : "normal",
                 fontStyle: previewStyle === "italic" ? "italic" : "normal",
               }}
@@ -78,7 +44,7 @@ export default function FontPreviewGenerator({ text, fontSize, fontName }: FontP
       </Card>
 
       {/* Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Background Color</label>
           <div className="flex items-center space-x-2">
@@ -127,14 +93,6 @@ export default function FontPreviewGenerator({ text, fontSize, fontName }: FontP
               <SelectItem value="italic">Italic</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Actions</label>
-          <Button onClick={generatePreviewImage} className="w-full">
-            <Download className="w-4 h-4 mr-2" />
-            Download Preview
-          </Button>
         </div>
       </div>
 

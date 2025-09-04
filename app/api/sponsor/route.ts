@@ -1,28 +1,29 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
+import { getDatabase } from "@/lib/mongodb"
 import { verifyToken } from "@/lib/auth-utils"
 import { ObjectId } from "mongodb"
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
+    const decoded = await verifyToken(token)
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
     const { fontId, amount, duration } = await request.json()
+    const userId = new ObjectId(decoded.userId)
 
-    const db = await connectDB()
+    const db = await getDatabase()
 
     // Check if font exists and user owns it
     const font = await db.collection("fonts").findOne({
       _id: new ObjectId(fontId),
-      sellerId: user.id,
+      sellerId: userId,
     })
 
     if (!font) {
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Create sponsor record
     const sponsor = {
       fontId: new ObjectId(fontId),
-      sellerId: user.id,
+      sellerId: userId,
       amount: Number.parseFloat(amount),
       duration: Number.parseInt(duration), // days
       startDate: new Date(),
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const db = await connectDB()
+    const db = await getDatabase()
 
     // Get active sponsored fonts
     const sponsoredFonts = await db

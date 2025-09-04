@@ -10,12 +10,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Star, Download, Heart, MessageCircle, Share2, ShoppingCart, Eye, Globe, Calendar, User } from "lucide-react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import type { Font } from "@/lib/models/User"
 import FontPreviewGenerator from "@/components/FontPreviewGenerator"
+import { useAuth } from "@/lib/contexts/AuthContext"
 
 export default function FontDetailPage() {
   const params = useParams()
+  const router = useRouter()
+  const { user } = useAuth()
   const [font, setFont] = useState<Font | null>(null)
   const [loading, setLoading] = useState(true)
   const [previewText, setPreviewText] = useState("The quick brown fox jumps over the lazy dog")
@@ -42,30 +45,74 @@ export default function FontDetailPage() {
   }
 
   const addToCart = async () => {
+    if (!user) {
+      router.push("/auth/login")
+      return
+    }
     try {
       await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fontId: font?._id }),
       })
-      // Show success message
+      alert("Added to cart!")
     } catch (error) {
       console.error("Error adding to cart:", error)
     }
   }
 
   const addToWishlist = async () => {
+    if (!user) {
+      router.push("/auth/login")
+      return
+    }
     try {
       await fetch("/api/wishlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fontId: font?._id }),
       })
-      // Show success message
+      alert("Added to wishlist!")
     } catch (error) {
       console.error("Error adding to wishlist:", error)
     }
   }
+
+  const handleFreeDownload = () => {
+    if (!font || !font.fontFiles || font.fontFiles.length === 0) {
+      alert("No font file available for download.")
+      return
+    }
+    // In a real scenario, this would be a secure, expiring link.
+    // For this app, we'll directly open the placeholder URL.
+    window.open(font.fontFiles[0].fileUrl, "_blank")
+  }
+
+  const handleStartChat = async () => {
+    if (!user) {
+      router.push("/auth/login")
+      return
+    }
+    if (!font) return
+
+    try {
+      const response = await fetch("/api/chat/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantId: font.sellerId }),
+      })
+      const data = await response.json()
+      if (response.ok && data.conversationId) {
+        router.push(`/chat?conversation=${data.conversationId}`)
+      } else {
+        throw new Error(data.error || "Could not start conversation.")
+      }
+    } catch (error) {
+      console.error("Error starting chat:", error)
+      alert("Error starting chat.")
+    }
+  }
+
 
   if (loading) {
     return (
@@ -209,6 +256,7 @@ export default function FontDetailPage() {
                       value={previewText}
                       onChange={(e) => setPreviewText(e.target.value)}
                       className="min-h-[100px]"
+                      style={{ fontFamily: `'${font.name}', system-ui, sans-serif`, fontSize: `${selectedSize}px` }}
                     />
                   </div>
 
@@ -224,7 +272,6 @@ export default function FontDetailPage() {
                         className="w-20"
                       />
                     </div>
-                    <Button>Generate Preview Image</Button>
                   </div>
                 </div>
 
@@ -399,7 +446,7 @@ export default function FontDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {font.isFree ? (
-                  <Button className="w-full" size="lg">
+                  <Button className="w-full" size="lg" onClick={handleFreeDownload}>
                     <Download className="w-4 h-4 mr-2" />
                     Download Free
                   </Button>
@@ -420,7 +467,7 @@ export default function FontDetailPage() {
                     <Heart className="w-4 h-4 mr-2" />
                     Wishlist
                   </Button>
-                  <Button variant="outline" className="flex-1 bg-transparent">
+                  <Button variant="outline" className="flex-1 bg-transparent" onClick={handleStartChat}>
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Chat
                   </Button>
@@ -451,7 +498,7 @@ export default function FontDetailPage() {
                       <Button variant="outline" size="sm">
                         View Profile
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={handleStartChat}>
                         <MessageCircle className="w-4 h-4 mr-1" />
                         Contact
                       </Button>

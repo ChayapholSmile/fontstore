@@ -1,23 +1,24 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
+import { getDatabase } from "@/lib/mongodb"
 import { verifyToken } from "@/lib/auth-utils"
 import { ObjectId } from "mongodb"
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
+    const decoded = await verifyToken(token)
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
+    const userId = new ObjectId(decoded.userId)
 
     const { fontId } = await request.json()
 
-    const db = await connectDB()
+    const db = await getDatabase()
 
     // Check if font exists
     const font = await db.collection("fonts").findOne({
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Check if user already has a trial key for this font
     const existingTrial = await db.collection("trialKeys").findOne({
       fontId: new ObjectId(fontId),
-      userId: user.id,
+      userId: userId,
     })
 
     if (existingTrial) {
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Generate trial key
     const trialKey = {
       fontId: new ObjectId(fontId),
-      userId: user.id,
+      userId: userId,
       key: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       usageCount: 0,
@@ -64,23 +65,24 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
+    const decoded = await verifyToken(token)
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
+    const userId = new ObjectId(decoded.userId)
 
-    const db = await connectDB()
+    const db = await getDatabase()
 
     const trialKeys = await db
       .collection("trialKeys")
       .aggregate([
         {
-          $match: { userId: user.id },
+          $match: { userId: userId },
         },
         {
           $lookup: {

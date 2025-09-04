@@ -39,32 +39,36 @@ export async function GET(request: NextRequest) {
         {
           $lookup: {
             from: "chatMessages",
-            let: { conversationId: "$_id" },
-            pipeline: [
-              { $match: { $expr: { $eq: ["$conversationId", "$$conversationId"] } } },
-              { $sort: { createdAt: -1 } },
-              { $limit: 1 },
-            ],
-            as: "lastMessage",
+            localField: "_id",
+            foreignField: "conversationId",
+            as: "messages",
           },
         },
         {
           $addFields: {
-            lastMessage: { $arrayElemAt: ["$lastMessage", 0] },
+            lastMessage: { $arrayElemAt: [{ $slice: ["$messages", -1] }, 0] },
             unreadCount: {
               $size: {
                 $filter: {
                   input: "$messages",
+                  as: "message",
                   cond: {
-                    $and: [{ $ne: ["$$this.senderId", userId] }, { $eq: ["$$this.readAt", null] }],
+                    $and: [{ $eq: ["$$message.readAt", null] }, { $ne: ["$$message.senderId", userId] }],
                   },
                 },
               },
             },
+            participants: "$participantDetails",
           },
         },
         {
-          $sort: { updatedAt: -1 },
+          $project: {
+            messages: 0,
+            participantDetails: 0,
+          },
+        },
+        {
+          $sort: { "lastMessage.createdAt": -1 },
         },
       ])
       .toArray()
@@ -101,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     // Check if conversation already exists
     const existingConversation = await db.collection("conversations").findOne({
-      participants: { $all: [userId, otherUserId] },
+      participants: { $all: [userId, otherUserId], $size: 2 },
     })
 
     if (existingConversation) {

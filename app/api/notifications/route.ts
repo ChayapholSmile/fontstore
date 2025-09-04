@@ -1,23 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
+import { getDatabase } from "@/lib/mongodb"
 import { verifyToken } from "@/lib/auth-utils"
+import { ObjectId } from "mongodb"
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
+    const decoded = await verifyToken(token)
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
+    const userId = new ObjectId(decoded.userId)
 
-    const db = await connectDB()
+    const db = await getDatabase()
     const notifications = await db
       .collection("notifications")
-      .find({ userId: user.id })
+      .find({ userId: userId })
       .sort({ createdAt: -1 })
       .limit(50)
       .toArray()
@@ -31,25 +33,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
+    const decoded = await verifyToken(token)
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
+    const userId = new ObjectId(decoded.userId)
 
     const { type, title, message, fontId } = await request.json()
 
-    const db = await connectDB()
+    const db = await getDatabase()
     const notification = {
-      userId: user.id,
+      userId: userId,
       type,
       title,
       message,
-      fontId: fontId || null,
+      fontId: fontId ? new ObjectId(fontId) : null,
       read: false,
       createdAt: new Date(),
     }

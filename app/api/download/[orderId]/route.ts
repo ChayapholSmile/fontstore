@@ -48,20 +48,17 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
       return NextResponse.json({ error: "Font not found" }, { status: 404 })
     }
 
-    // In a real implementation, you would:
-    // 1. Generate a ZIP file with the font files
-    // 2. Include the license text file
-    // 3. Return the file as a download
+    // In a real implementation, you would generate a ZIP.
+    // For now, we'll return the URL of the first font file.
+    const downloadUrl = font.fontFiles?.[0]?.fileUrl
 
-    // For now, return download info
+    if (!downloadUrl) {
+      return NextResponse.json({ error: "No font file available for download." }, { status: 404 })
+    }
+
     return NextResponse.json({
       message: "Download ready",
-      font: {
-        name: font.name,
-        files: font.fontFiles,
-      },
-      license: order.licenseText,
-      downloadUrl: `/fonts/${font._id}/download.zip`,
+      downloadUrl: downloadUrl,
     })
   } catch (error) {
     console.error("Download error:", error)

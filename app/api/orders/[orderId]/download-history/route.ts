@@ -1,26 +1,27 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
+import { getDatabase } from "@/lib/mongodb"
 import { verifyToken } from "@/lib/auth-utils"
 import { ObjectId } from "mongodb"
 
 export async function GET(request: NextRequest, { params }: { params: { orderId: string } }) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
+    const decoded = await verifyToken(token)
+    if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
+    const userId = new ObjectId(decoded.userId)
 
-    const db = await connectDB()
+    const db = await getDatabase()
 
     // Get order and verify ownership
     const order = await db.collection("orders").findOne({
       _id: new ObjectId(params.orderId),
-      buyerId: user.id,
+      buyerId: userId,
     })
 
     if (!order) {

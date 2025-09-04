@@ -8,16 +8,19 @@ import { Download, Calendar, DollarSign, FileText, History } from "lucide-react"
 import Link from "next/link"
 
 interface Purchase {
-  _id: string
-  fontName: string
-  fontId: string
-  amount: number
-  status: string
-  purchaseDate: string
-  downloadCount: number
-  lastDownload?: string
-  license: string
+  _id: string;
+  font: {
+    _id: string;
+    name: string;
+  };
+  amount: number;
+  status: string;
+  createdAt: string;
+  downloadCount: number;
+  lastDownload?: string;
+  licenseText: string;
 }
+
 
 export default function MyPurchasesPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([])
@@ -29,10 +32,10 @@ export default function MyPurchasesPage() {
 
   const fetchPurchases = async () => {
     try {
-      const response = await fetch("/api/orders/my-purchases")
+      const response = await fetch("/api/orders?type=purchases")
       if (response.ok) {
         const data = await response.json()
-        setPurchases(data.purchases)
+        setPurchases(data.orders)
       }
     } catch (error) {
       console.error("Error fetching purchases:", error)
@@ -45,20 +48,23 @@ export default function MyPurchasesPage() {
     try {
       const response = await fetch(`/api/download/${orderId}`)
       if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `font-${orderId}.zip`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+        const data = await response.json()
+        const downloadUrl = data.downloadUrl
 
+        if (downloadUrl) {
+          // Since the URL is a placeholder, this will likely result in a 404,
+          // but it correctly implements the download flow. In a real app
+          // with real file URLs, this would work.
+          window.open(downloadUrl, "_blank")
+        } else {
+          alert("Download URL not found.")
+        }
+        
         // Refresh purchases to update download count
         fetchPurchases()
       } else {
-        alert("Download failed. Please try again.")
+        const error = await response.json()
+        alert(error.error || "Download failed. Please try again.")
       }
     } catch (error) {
       console.error("Error downloading font:", error)
@@ -112,11 +118,11 @@ export default function MyPurchasesPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-xl mb-1">{purchase.fontName}</CardTitle>
+                    <CardTitle className="text-xl mb-1">{purchase.font.name}</CardTitle>
                     <CardDescription className="flex items-center gap-4">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        Purchased: {new Date(purchase.purchaseDate).toLocaleDateString()}
+                        Purchased: {new Date(purchase.createdAt).toLocaleDateString()}
                       </span>
                       <span className="flex items-center gap-1">
                         <DollarSign className="h-3 w-3" />${purchase.amount}
@@ -131,7 +137,7 @@ export default function MyPurchasesPage() {
                   <div className="flex items-center gap-6 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Download className="h-3 w-3" />
-                      Downloaded {purchase.downloadCount} times
+                      Downloaded {purchase.downloadCount || 0} times
                     </span>
                     {purchase.lastDownload && (
                       <span className="flex items-center gap-1">
@@ -141,7 +147,7 @@ export default function MyPurchasesPage() {
                     )}
                     <span className="flex items-center gap-1">
                       <FileText className="h-3 w-3" />
-                      {purchase.license} License
+                      Commercial License
                     </span>
                   </div>
                 </div>
@@ -156,7 +162,7 @@ export default function MyPurchasesPage() {
                     Download Font
                   </Button>
 
-                  <Link href={`/fonts/${purchase.fontId}`}>
+                  <Link href={`/fonts/${purchase.font._id}`}>
                     <Button variant="outline">View Font Details</Button>
                   </Link>
 
@@ -170,9 +176,7 @@ export default function MyPurchasesPage() {
 
                 <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>License:</strong> {purchase.license} - Copyright ©{" "}
-                    {new Date(purchase.purchaseDate).getFullYear()} Font Designer, Licensed to: Your Name (Unique
-                    License ID: {purchase._id.slice(-8)})
+                    <strong>License:</strong> {purchase.licenseText}
                   </p>
                 </div>
               </CardContent>
