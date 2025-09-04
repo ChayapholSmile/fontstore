@@ -15,6 +15,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Upload, X, FileText, DollarSign, Globe, Tag } from "lucide-react"
 import Link from "next/link"
 
+// Helper function to convert a file to a Data URL
+const fileToDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function UploadFontPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -113,21 +123,36 @@ export default function UploadFontPage() {
         throw new Error("Please set a price for paid fonts")
       }
 
-      // Create FormData for file upload
-      const uploadData = new FormData()
-      uploadData.append("fontData", JSON.stringify(formData))
+      // Convert files to Data URLs
+      const fontFilesData = await Promise.all(
+        files.map(async (file) => ({
+          name: file.name,
+          size: file.size,
+          format: file.name.split(".").pop()?.toLowerCase(),
+          dataUrl: await fileToDataUrl(file),
+        })),
+      )
 
-      files.forEach((file, index) => {
-        uploadData.append(`fontFile_${index}`, file)
-      })
+      const previewImagesData = await Promise.all(
+        previewImages.map(async (file) => ({
+          name: file.name,
+          size: file.size,
+          dataUrl: await fileToDataUrl(file),
+        })),
+      )
 
-      previewImages.forEach((file, index) => {
-        uploadData.append(`previewImage_${index}`, file)
-      })
+      const payload = {
+        fontData: formData,
+        fontFiles: fontFilesData,
+        previewImages: previewImagesData,
+      }
 
       const response = await fetch("/api/fonts/upload", {
         method: "POST",
-        body: uploadData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
