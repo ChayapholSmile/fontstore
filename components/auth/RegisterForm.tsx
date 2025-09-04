@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,12 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
+import { useAuth } from "@/lib/contexts/AuthContext"
 
 interface RegisterFormProps {
   onSuccess?: () => void
 }
 
 export default function RegisterForm({ onSuccess }: RegisterFormProps) {
+  const { register, loading, error } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -25,65 +26,27 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     role: "buyer" as "buyer" | "seller",
     language: "en" as "en" | "th" | "zh",
   })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [localError, setLocalError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError("")
+    setLocalError("")
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      setLoading(false)
+      setLocalError("Passwords do not match")
       return
     }
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          username: formData.username,
-          displayName: formData.displayName,
-          role: formData.role,
-          language: formData.language,
-        }),
-      })
+      await register(formData.email, formData.password, formData.displayName, formData.role)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Registration failed")
-      }
-
-      // Auto login after registration
-      const loginResponse = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
-
-      if (loginResponse.ok) {
-        if (onSuccess) {
-          onSuccess()
-        } else {
-          window.location.href = "/dashboard"
-        }
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        window.location.href = "/dashboard"
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-    } finally {
-      setLoading(false)
+      console.error("Registration error:", err)
     }
   }
 
@@ -95,9 +58,9 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
+          {(error || localError) && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{localError || error}</AlertDescription>
             </Alert>
           )}
 

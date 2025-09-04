@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { LanguageProvider } from "@/lib/contexts/LanguageContext"
+import { AuthProvider } from "@/lib/contexts/AuthContext"
 import "./globals.css"
 
 // Added Work Sans for headings and Open Sans for body text as per design brief
@@ -33,9 +34,11 @@ export default function ClientLayout({
   return (
     <html lang="en" className={`${workSans.variable} ${openSans.variable}`}>
       <body className="font-sans antialiased">
-        <LanguageProvider>
-          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-        </LanguageProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+          </LanguageProvider>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

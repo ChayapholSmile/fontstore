@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,49 +8,32 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
+import { useAuth } from "@/lib/contexts/AuthContext"
 
 interface LoginFormProps {
   onSuccess?: () => void
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
+  const { login, loading, error } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError("")
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
+      await login(formData.email, formData.password)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Login failed")
-      }
-
-      // Redirect or call success callback
       if (onSuccess) {
         onSuccess()
       } else {
         window.location.href = "/dashboard"
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-    } finally {
-      setLoading(false)
+      console.error("Login error:", err)
     }
   }
 
