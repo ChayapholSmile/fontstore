@@ -1,0 +1,418 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Send, Search, MoreVertical, Paperclip, DollarSign, Check, X, Download, MessageCircle } from "lucide-react"
+import Link from "next/link"
+import type { ChatMessage } from "@/lib/models/User"
+
+interface Conversation {
+  _id: string
+  participants: {
+    _id: string
+    displayName: string
+    avatar?: string
+  }[]
+  lastMessage?: ChatMessage
+  unreadCount: number
+  updatedAt: string
+}
+
+export default function ChatPage() {
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [newMessage, setNewMessage] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetchCurrentUser()
+    fetchConversations()
+  }, [])
+
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages(selectedConversation)
+    }
+  }, [selectedConversation])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch("/api/auth/me")
+      if (response.ok) {
+        const data = await response.json()
+        setCurrentUser(data.user)
+      }
+    } catch (error) {
+      console.error("Error fetching current user:", error)
+    }
+  }
+
+  const fetchConversations = async () => {
+    try {
+      const response = await fetch("/api/chat/conversations")
+      const data = await response.json()
+      setConversations(data.conversations || [])
+    } catch (error) {
+      console.error("Error fetching conversations:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchMessages = async (conversationId: string) => {
+    try {
+      const response = await fetch(`/api/chat/messages/${conversationId}`)
+      const data = await response.json()
+      setMessages(data.messages || [])
+    } catch (error) {
+      console.error("Error fetching messages:", error)
+    }
+  }
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation) return
+
+    try {
+      const response = await fetch("/api/chat/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: selectedConversation,
+          message: newMessage,
+          messageType: "text",
+        }),
+      })
+
+      if (response.ok) {
+        setNewMessage("")
+        fetchMessages(selectedConversation)
+        fetchConversations()
+      }
+    } catch (error) {
+      console.error("Error sending message:", error)
+    }
+  }
+
+  const sendPaymentRequest = async (fontId: string, amount: number) => {
+    if (!selectedConversation) return
+
+    try {
+      const response = await fetch("/api/chat/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: selectedConversation,
+          message: `Payment request for font: $${amount}`,
+          messageType: "payment-request",
+          paymentRequest: { fontId, amount, status: "pending" },
+        }),
+      })
+
+      if (response.ok) {
+        fetchMessages(selectedConversation)
+        fetchConversations()
+      }
+    } catch (error) {
+      console.error("Error sending payment request:", error)
+    }
+  }
+
+  const handlePaymentResponse = async (messageId: string, action: "accept" | "decline") => {
+    try {
+      const response = await fetch("/api/chat/payment-response", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId, action }),
+      })
+
+      if (response.ok) {
+        fetchMessages(selectedConversation!)
+        fetchConversations()
+      }
+    } catch (error) {
+      console.error("Error handling payment response:", error)
+    }
+  }
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  const getOtherParticipant = (conversation: Conversation) => {
+    return conversation.participants.find((p) => p._id !== currentUser?._id)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading conversations...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">F</span>
+              </div>
+              <span className="text-xl font-bold">FontMarket</span>
+            </Link>
+
+            <nav className="hidden md:flex items-center space-x-6">
+              <Link href="/fonts" className="text-muted-foreground hover:text-foreground transition-colors">
+                Browse Fonts
+              </Link>
+              <Link href="/chat" className="text-primary font-medium">
+                Messages
+              </Link>
+              <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+                Dashboard
+              </Link>
+            </nav>
+
+            <div className="flex items-center space-x-3">
+              <Button variant="outline" size="sm">
+                Profile
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+          {/* Conversations List */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageCircle className="w-5 h-5" />
+                <span>Messages</span>
+              </CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input placeholder="Search conversations..." className="pl-10" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[500px]">
+                {conversations.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No conversations yet</p>
+                  </div>
+                ) : (
+                  conversations.map((conversation) => {
+                    const otherParticipant = getOtherParticipant(conversation)
+                    return (
+                      <div
+                        key={conversation._id}
+                        className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
+                          selectedConversation === conversation._id ? "bg-muted" : ""
+                        }`}
+                        onClick={() => setSelectedConversation(conversation._id)}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback>{otherParticipant?.displayName?.[0] || "U"}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium truncate">
+                                {otherParticipant?.displayName || "Unknown User"}
+                              </h4>
+                              {conversation.unreadCount > 0 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {conversation.unreadCount}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {conversation.lastMessage?.message || "No messages yet"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(conversation.updatedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Chat Area */}
+          <Card className="lg:col-span-3">
+            {selectedConversation ? (
+              <>
+                {/* Chat Header */}
+                <CardHeader className="border-b">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        <AvatarFallback>
+                          {getOtherParticipant(conversations.find((c) => c._id === selectedConversation)!)
+                            ?.displayName?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-semibold">
+                          {getOtherParticipant(conversations.find((c) => c._id === selectedConversation)!)
+                            ?.displayName || "Unknown User"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">Online</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+
+                {/* Messages */}
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[400px] p-4">
+                    <div className="space-y-4">
+                      {messages.map((message) => (
+                        <MessageBubble
+                          key={message._id?.toString()}
+                          message={message}
+                          isOwn={message.senderId.toString() === currentUser?._id}
+                          onPaymentResponse={handlePaymentResponse}
+                        />
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+
+                {/* Message Input */}
+                <div className="border-t p-4">
+                  <div className="flex items-center space-x-2">
+                    <Button variant="ghost" size="sm">
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <DollarSign className="w-4 h-4" />
+                    </Button>
+                    <Input
+                      placeholder="Type a message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                      className="flex-1"
+                    />
+                    <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <CardContent className="flex items-center justify-center h-full">
+                <div className="text-center text-muted-foreground">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
+                  <p>Choose a conversation from the list to start messaging</p>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface MessageBubbleProps {
+  message: ChatMessage
+  isOwn: boolean
+  onPaymentResponse: (messageId: string, action: "accept" | "decline") => void
+}
+
+function MessageBubble({ message, isOwn, onPaymentResponse }: MessageBubbleProps) {
+  const isPaymentRequest = message.messageType === "payment-request"
+
+  return (
+    <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+      <div className={`max-w-[70%] ${isOwn ? "order-2" : "order-1"}`}>
+        <div
+          className={`rounded-lg p-3 ${
+            isOwn
+              ? "bg-primary text-primary-foreground"
+              : isPaymentRequest
+                ? "bg-yellow-50 border border-yellow-200"
+                : "bg-muted"
+          }`}
+        >
+          {isPaymentRequest ? (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <DollarSign className="w-4 h-4 text-yellow-600" />
+                <span className="font-medium text-yellow-800">Payment Request</span>
+              </div>
+              <p className="text-sm text-yellow-700">{message.message}</p>
+              <div className="text-lg font-bold text-yellow-800">${message.paymentRequest?.amount}</div>
+              {!isOwn && message.paymentRequest?.status === "pending" && (
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    onClick={() => onPaymentResponse(message._id!.toString(), "accept")}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="w-4 h-4 mr-1" />
+                    Accept
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onPaymentResponse(message._id!.toString(), "decline")}
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Decline
+                  </Button>
+                </div>
+              )}
+              {message.paymentRequest?.status === "paid" && (
+                <div className="flex items-center space-x-2 text-green-600">
+                  <Check className="w-4 h-4" />
+                  <span className="text-sm font-medium">Payment Completed</span>
+                  <Button size="sm" variant="outline">
+                    <Download className="w-4 h-4 mr-1" />
+                    Download
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm">{message.message}</p>
+          )}
+        </div>
+        <p className={`text-xs text-muted-foreground mt-1 ${isOwn ? "text-right" : "text-left"}`}>
+          {new Date(message.createdAt).toLocaleTimeString()}
+        </p>
+      </div>
+    </div>
+  )
+}
