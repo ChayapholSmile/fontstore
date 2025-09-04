@@ -100,6 +100,7 @@ export interface ChatMessage {
   // Payment related
   paymentRequest?: {
     fontId: ObjectId
+    orderId?: ObjectId
     amount: number
     status: "pending" | "paid" | "cancelled"
   }
@@ -115,7 +116,7 @@ export interface Order {
   fontId: ObjectId
 
   amount: number
-  paymentMethod: "chat-payment" | "card" | "paypal"
+  paymentMethod: "chat-payment" | "card" | "paypal" | "chat"
   paymentStatus: "pending" | "completed" | "failed" | "refunded"
 
   // License generation
