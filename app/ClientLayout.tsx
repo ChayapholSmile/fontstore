@@ -6,7 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { LanguageProvider } from "@/lib/contexts/LanguageContext"
 import { AuthProvider } from "@/lib/contexts/AuthContext"
-import "./globals.css"
+import Header from "@/components/Header"
 
 // Added Work Sans for headings and Open Sans for body text as per design brief
 const workSans = Work_Sans({
@@ -28,14 +28,19 @@ export default function ClientLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // Removed useSearchParams usage that was causing Suspense boundary error
-
   return (
     <html lang="en" className={`${workSans.variable} ${openSans.variable}`}>
       <body className="font-sans antialiased">
         <AuthProvider>
           <LanguageProvider>
-            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+            <Suspense
+              fallback={
+                <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>
+              }
+            >
+              <Header />
+              <main className="pt-16">{children}</main>
+            </Suspense>
           </LanguageProvider>
         </AuthProvider>
         <Analytics />
