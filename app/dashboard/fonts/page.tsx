@@ -45,7 +45,7 @@ export default function MyFontsPage() {
     if (!confirm("Are you sure you want to delete this font?")) return
 
     try {
-      const response = await fetch(`/api/dashboard/fonts/${fontId}`, {
+      const response = await fetch(`/api/fonts/${fontId}`, {
         method: "DELETE",
       })
 
@@ -74,39 +74,6 @@ export default function MyFontsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">F</span>
-              </div>
-              <span className="text-xl font-bold">FontMarket</span>
-            </Link>
-
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/fonts" className="text-primary font-medium">
-                My Fonts
-              </Link>
-              <Link href="/dashboard/orders" className="text-muted-foreground hover:text-foreground transition-colors">
-                Orders
-              </Link>
-            </nav>
-
-            <Link href="/dashboard/upload">
-              <Button size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Upload Font
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">My Fonts</h1>
