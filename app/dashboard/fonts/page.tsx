@@ -105,7 +105,7 @@ export default function MyFontsPage() {
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -153,7 +153,7 @@ export default function MyFontsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {fonts.map((font) => (
               <Card key={font._id?.toString()} className="group hover:shadow-lg transition-all duration-300">
                 <CardHeader className="pb-4">
@@ -175,7 +175,7 @@ export default function MyFontsPage() {
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => alert("Edit functionality coming soon!")}>
+                          <DropdownMenuItem onClick={() => router.push(`/dashboard/fonts/${font._id}/edit`)}>
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Font
                           </DropdownMenuItem>
@@ -194,71 +194,26 @@ export default function MyFontsPage() {
                 <CardContent>
                   {/* Font Preview */}
                   <div className="bg-muted/50 rounded-lg p-6 mb-4">
-                    <div className="text-2xl font-bold mb-2" style={{ fontFamily: "system-ui" }}>
+                    <div className="text-2xl font-bold mb-2 truncate" style={{ fontFamily: `"${font.name}", system-ui` }}>
                       The quick brown fox
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      ABCDEFGHIJKLMNOPQRSTUVWXYZ
-                      <br />
-                      abcdefghijklmnopqrstuvwxyz
-                    </div>
                   </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <Download className="w-4 h-4 text-muted-foreground" />
-                      </div>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <Download className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
                       <div className="text-sm font-medium">{font.downloads}</div>
                       <div className="text-xs text-muted-foreground">Downloads</div>
                     </div>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <Star className="w-4 h-4 text-muted-foreground" />
-                      </div>
+                    <div>
+                      <Star className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
                       <div className="text-sm font-medium">{font.rating}</div>
                       <div className="text-xs text-muted-foreground">Rating</div>
                     </div>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                      </div>
+                    <div>
+                      <TrendingUp className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
                       <div className="text-sm font-medium">{font.isFree ? "Free" : `$${font.price}`}</div>
                       <div className="text-xs text-muted-foreground">Price</div>
                     </div>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {font.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {font.tags.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{font.tags.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex space-x-2">
-                    <Link href={`/fonts/${font._id}`} className="flex-1">
-                      <Button variant="outline" className="w-full bg-transparent">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="outline"
-                      className="flex-1 bg-transparent"
-                      onClick={() => alert("Edit functionality coming soon!")}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
