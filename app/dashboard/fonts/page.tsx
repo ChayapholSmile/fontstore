@@ -10,12 +10,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Search, Plus, MoreVertical, Edit, Trash2, Eye, TrendingUp, Download, Star } from "lucide-react"
 import Link from "next/link"
 import type { Font } from "@/lib/models/User"
+import { useRouter } from "next/navigation"
 
 export default function MyFontsPage() {
   const [fonts, setFonts] = useState<Font[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const router = useRouter()
 
   useEffect(() => {
     fetchMyFonts()
@@ -75,9 +77,17 @@ export default function MyFontsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Fonts</h1>
-          <p className="text-muted-foreground">Manage your font collection and track performance</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">My Fonts</h1>
+            <p className="text-muted-foreground">Manage your font collection and track performance</p>
+          </div>
+          <Link href="/dashboard/upload">
+            <Button size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Upload Font
+            </Button>
+          </Link>
         </div>
 
         {/* Filters */}
@@ -161,11 +171,11 @@ export default function MyFontsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/fonts/${font._id}`)}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => alert("Edit functionality coming soon!")}>
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Font
                           </DropdownMenuItem>
@@ -241,7 +251,11 @@ export default function MyFontsPage() {
                         View
                       </Button>
                     </Link>
-                    <Button variant="outline" className="flex-1 bg-transparent">
+                    <Button
+                      variant="outline"
+                      className="flex-1 bg-transparent"
+                      onClick={() => alert("Edit functionality coming soon!")}
+                    >
                       <Edit className="w-4 h-4 mr-2" />
                       Edit
                     </Button>
@@ -255,3 +269,4 @@ export default function MyFontsPage() {
     </div>
   )
 }
+
