@@ -69,39 +69,6 @@ export default function FontsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">F</span>
-              </div>
-              <span className="text-xl font-bold">FontMarket</span>
-            </Link>
-
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/fonts" className="text-primary font-medium">
-                Browse Fonts
-              </Link>
-              <Link href="/categories" className="text-muted-foreground hover:text-foreground transition-colors">
-                Categories
-              </Link>
-              <Link href="/sellers" className="text-muted-foreground hover:text-foreground transition-colors">
-                Sellers
-              </Link>
-            </nav>
-
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
-              <Button size="sm">Sign Up</Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-8">
         {/* Search and Filters */}
         <div className="mb-8 space-y-4">
