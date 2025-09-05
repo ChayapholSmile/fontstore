@@ -63,7 +63,7 @@ export const translations = {
   },
   th: {
     // General
-    fontMarket: "ชยาพลสมายล์ ฟอนต์",
+    fontMarket: "ChayapholSmile ฟอนต์",
     by: "โดย",
     viewDetails: "ดูรายละเอียด",
     free: "ฟรี",
