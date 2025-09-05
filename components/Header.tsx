@@ -25,14 +25,14 @@ export default function Header() {
   ]
 
   return (
-    <header className="border-b bg-card/80 backdrop-blur-sm fixed top-0 z-50 w-full">
+    <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">F</span>
+              <span className="text-primary-foreground font-bold text-lg">C</span>
             </div>
-            <span className="text-xl font-bold text-foreground">FontMarket</span>
+            <span className="text-xl font-bold text-foreground">ChayapholSmile Fonts</span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">
@@ -83,7 +83,7 @@ export default function Header() {
                 <div className="flex flex-col h-full">
                   <div className="flex justify-between items-center p-4 border-b">
                     <Link href="/" onClick={() => setMobileMenuOpen(false)}>
-                      <span className="text-lg font-bold">FontMarket</span>
+                      <span className="text-lg font-bold">ChayapholSmile Fonts</span>
                     </Link>
                     <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
                       <X className="h-6 w-6" />
