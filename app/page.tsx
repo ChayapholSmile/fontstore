@@ -9,8 +9,6 @@ import { Search, Star, Download, MessageCircle, Heart, TrendingUp, Users, Award 
 import Link from "next/link"
 import type { Font } from "@/lib/models/User"
 import { useLanguage } from "@/lib/contexts/LanguageContext"
-import { LanguageSwitcher } from "@/components/LanguageSwitcher"
-import { NotificationCenter } from "@/components/NotificationCenter"
 import { t } from "@/lib/i18n"
 import { useSearchParams } from "next/navigation"
 
@@ -58,60 +56,22 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">F</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">FontMarket</span>
-            </div>
-
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/fonts" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t("fonts")}
-              </Link>
-              <Link href="/categories" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t("categories")}
-              </Link>
-              <Link href="/chat" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t("chat")}
-              </Link>
-              <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t("dashboard")}
-              </Link>
-            </nav>
-
-            <div className="flex items-center space-x-3">
-              <LanguageSwitcher />
-              <NotificationCenter />
-              <Link href="/auth/login">
-                <Button variant="outline" size="sm">
-                  {t("login")}
-                </Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button size="sm">{t("register")}</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 text-balance">{t("heroTitle")}</h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty">{t("heroSubtitle")}</p>
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 text-balance">
+            {t("heroTitle", language)}
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty">
+            {t("heroSubtitle", language)}
+          </p>
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-12">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
-                placeholder={t("searchPlaceholder")}
+                placeholder={t("searchPlaceholder", language)}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -138,7 +98,7 @@ function HomePageContent() {
                   variant="secondary"
                   className="px-4 py-2 text-sm hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
                 >
-                  {t(category.key)}
+                  {t(category.key as any, language)}
                 </Badge>
               </Link>
             ))}
@@ -176,7 +136,7 @@ function HomePageContent() {
         <div className="container mx-auto">
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">{t("featuredFonts")}</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-2">{t("featuredFonts", language)}</h2>
               <p className="text-muted-foreground">Handpicked by our design team</p>
             </div>
             <Link href="/fonts?featured=true">
@@ -214,7 +174,7 @@ function HomePageContent() {
         <div className="container mx-auto">
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">{t("popularFonts")}</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-2">{t("popularCategories", language)}</h2>
               <p className="text-muted-foreground">Most downloaded fonts</p>
             </div>
             <Link href="/fonts?sortBy=popular">
@@ -251,19 +211,19 @@ function HomePageContent() {
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">{t("tryBeforeYouBuy")}</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">{t("testAnyFont")}</p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">Try Before You Buy</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Test any font with your own text</p>
           </div>
 
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
-              <CardTitle>{t("fontPreviewTool")}</CardTitle>
-              <CardDescription>{t("typeYourText")}</CardDescription>
+              <CardTitle>Font Preview Tool</CardTitle>
+              <CardDescription>Type your text below to see how it looks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <Input
-                  placeholder={t("tryFontPlaceholder")}
+                  placeholder={t("tryFontPlaceholder", language)}
                   className="text-lg py-3"
                   defaultValue="The quick brown fox jumps over the lazy dog"
                 />
@@ -274,16 +234,16 @@ function HomePageContent() {
                   <div className="text-4xl font-bold mb-4 text-foreground">
                     The quick brown fox jumps over the lazy dog
                   </div>
-                  <div className="text-sm text-muted-foreground">{t("previewWithModernSansPro")}</div>
+                  <div className="text-sm text-muted-foreground">Preview with Modern Sans Pro</div>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <Button variant="outline">{t("changeFont")}</Button>
-                <Button variant="outline">{t("adjustSize")}</Button>
-                <Button variant="outline">{t("changeLanguage")}</Button>
+                <Button variant="outline">Change Font</Button>
+                <Button variant="outline">Adjust Size</Button>
+                <Button variant="outline">Change Language</Button>
                 <Link href="/fonts">
-                  <Button>{t("browseAllFonts")}</Button>
+                  <Button>Browse All Fonts</Button>
                 </Link>
               </div>
             </CardContent>
@@ -300,84 +260,84 @@ function HomePageContent() {
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-lg">F</span>
                 </div>
-                <span className="text-xl font-bold">{t("fontMarket")}</span>
+                <span className="text-xl font-bold">FontMarket</span>
               </div>
-              <p className="text-muted-foreground text-sm">{t("largestMarketplace")}</p>
+              <p className="text-muted-foreground text-sm">The largest marketplace for premium fonts.</p>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">{t("browse")}</h3>
+              <h3 className="font-semibold mb-4">Browse</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/fonts" className="hover:text-foreground transition-colors">
-                    {t("allFonts")}
+                    All Fonts
                   </Link>
                 </li>
                 <li>
                   <Link href="/fonts?free=true" className="hover:text-foreground transition-colors">
-                    {t("freeFonts")}
+                    Free Fonts
                   </Link>
                 </li>
                 <li>
                   <Link href="/fonts?featured=true" className="hover:text-foreground transition-colors">
-                    {t("premiumFonts")}
+                    Premium Fonts
                   </Link>
                 </li>
                 <li>
                   <Link href="/fonts?sortBy=newest" className="hover:text-foreground transition-colors">
-                    {t("newReleases")}
+                    New Releases
                   </Link>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">{t("sell")}</h3>
+              <h3 className="font-semibold mb-4">Sell</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/sellers/register" className="hover:text-foreground transition-colors">
-                    {t("becomeASeller")}
+                    Become a Seller
                   </Link>
                 </li>
                 <li>
                   <Link href="/dashboard" className="hover:text-foreground transition-colors">
-                    {t("sellerDashboard")}
+                    Seller Dashboard
                   </Link>
                 </li>
                 <li>
                   <Link href="/guidelines" className="hover:text-foreground transition-colors">
-                    {t("uploadGuidelines")}
+                    Upload Guidelines
                   </Link>
                 </li>
                 <li>
                   <Link href="/pricing" className="hover:text-foreground transition-colors">
-                    {t("pricingGuide")}
+                    Pricing Guide
                   </Link>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">{t("support")}</h3>
+              <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/help" className="hover:text-foreground transition-colors">
-                    {t("helpCenter")}
+                    Help Center
                   </Link>
                 </li>
                 <li>
                   <Link href="/contact" className="hover:text-foreground transition-colors">
-                    {t("contactUs")}
+                    Contact Us
                   </Link>
                 </li>
                 <li>
                   <Link href="/license" className="hover:text-foreground transition-colors">
-                    {t("licenseInfo")}
+                    License Info
                   </Link>
                 </li>
                 <li>
                   <Link href="/terms" className="hover:text-foreground transition-colors">
-                    {t("termsOfService")}
+                    Terms of Service
                   </Link>
                 </li>
               </ul>
@@ -398,6 +358,7 @@ interface FontCardProps {
 }
 
 function FontCard({ font }: FontCardProps) {
+  const { language } = useLanguage()
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
       <CardHeader className="pb-4">
@@ -405,7 +366,7 @@ function FontCard({ font }: FontCardProps) {
           <div>
             <CardTitle className="text-lg mb-1">{font.name}</CardTitle>
             <CardDescription>
-              {t("by")} {font.sellerName}
+              {t("designer", language)} {font.sellerName}
             </CardDescription>
           </div>
           <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -441,7 +402,7 @@ function FontCard({ font }: FontCardProps) {
           </div>
           <div className="text-right">
             {font.isFree ? (
-              <div className="text-lg font-bold text-green-600">{t("free")}</div>
+              <div className="text-lg font-bold text-green-600">{t("free", language)}</div>
             ) : (
               <div>
                 <div className="text-lg font-bold text-primary">${font.price}</div>
@@ -455,7 +416,7 @@ function FontCard({ font }: FontCardProps) {
 
         <div className="flex space-x-2">
           <Link href={`/fonts/${font._id}`} className="flex-1">
-            <Button className="w-full">{t("viewDetails")}</Button>
+            <Button className="w-full">View Details</Button>
           </Link>
           <Button variant="outline" size="icon">
             <MessageCircle className="w-4 h-4" />
