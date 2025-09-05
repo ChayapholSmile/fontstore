@@ -40,7 +40,7 @@ export default function FontsPage() {
       if (searchQuery) params.append("search", searchQuery)
       if (showFreeOnly) params.append("free", "true")
 
-      const response = await fetch(`/api/fonts?${params}`)
+      const response = await fetch(`/api/fonts?${params.toString()}`)
       const data = await response.json()
       setFonts(data.fonts || [])
     } catch (error) {
@@ -61,7 +61,7 @@ export default function FontsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fontId }),
       })
-      // Show success message
+      alert("Added to wishlist!")
     } catch (error) {
       console.error("Error adding to wishlist:", error)
     }
@@ -70,7 +70,6 @@ export default function FontsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        {/* Search and Filters */}
         <div className="mb-8 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -88,20 +87,18 @@ export default function FontsPage() {
 
           <div className="flex flex-wrap items-center gap-4">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
-                  </SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -113,61 +110,43 @@ export default function FontsPage() {
               </SelectContent>
             </Select>
 
-            <Button
-              variant={showFreeOnly ? "default" : "outline"}
-              onClick={() => setShowFreeOnly(!showFreeOnly)}
-              size="sm"
-            >
-              Free Only
-            </Button>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="free-only"
+                checked={showFreeOnly}
+                onChange={(e) => setShowFreeOnly(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="free-only" className="text-sm text-muted-foreground">Free only</label>
+            </div>
 
             <div className="flex items-center space-x-2 ml-auto">
-              <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-              >
+              <Button variant={viewMode === "grid" ? "default" : "outline"} size="sm" onClick={() => setViewMode("grid")}>
                 <Grid className="w-4 h-4" />
               </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
+              <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")}>
                 <List className="w-4 h-4" />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Fonts Grid/List */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-32 bg-muted rounded mb-4"></div>
-                  <div className="h-8 bg-muted rounded"></div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => <div key={i} className="h-96 bg-muted rounded-lg animate-pulse" />)}
+          </div>
+        ) : fonts.length === 0 ? (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-semibold mb-2">No Fonts Found</h2>
+            <p className="text-muted-foreground mb-4">Try adjusting your filters or check back later.</p>
+            <Button onClick={() => window.location.reload()}>Reset Filters</Button>
           </div>
         ) : (
-          <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+          <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
             {fonts.map((font) => (
               <FontCard key={font._id?.toString()} font={font} viewMode={viewMode} onAddToWishlist={addToWishlist} />
             ))}
-          </div>
-        )}
-
-        {!loading && fonts.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-muted-foreground mb-4">No fonts found matching your criteria</div>
-            <Button onClick={() => window.location.reload()}>Reset Filters</Button>
           </div>
         )}
       </div>
@@ -175,155 +154,61 @@ export default function FontsPage() {
   )
 }
 
-interface FontCardProps {
-  font: Font
-  viewMode: "grid" | "list"
-  onAddToWishlist: (fontId: string) => void
-}
-
-function FontCard({ font, viewMode, onAddToWishlist }: FontCardProps) {
+function FontCard({ font, viewMode, onAddToWishlist }: { font: Font; viewMode: "grid" | "list"; onAddToWishlist: (fontId: string) => void; }) {
   if (viewMode === "list") {
     return (
-      <Card className="group hover:shadow-lg transition-all duration-300">
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-6">
-            <div className="w-32 h-20 bg-muted rounded-lg flex items-center justify-center">
-              <span className="text-lg font-bold" style={{ fontFamily: "system-ui" }}>
-                Aa
-              </span>
+      <Card>
+        <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
+          <div className="w-full sm:w-32 h-20 bg-muted rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-lg font-bold truncate" style={{ fontFamily: `"${font.name}", system-ui` }}>Aa</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">{font.name}</h3>
+                <p className="text-sm text-muted-foreground">by {font.sellerName}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => onAddToWishlist(font._id!.toString())}><Heart className="w-4 h-4" /></Button>
             </div>
-
-            <div className="flex-1">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="text-lg font-semibold">{font.name}</h3>
-                  <p className="text-sm text-muted-foreground">by {font.sellerName}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onAddToWishlist(font._id!.toString())}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Heart className="w-4 h-4" />
-                </Button>
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary">{font.category}</Badge>
+                <div className="flex items-center gap-1"><Star className="w-4 h-4 text-yellow-400 fill-yellow-400" /> {font.rating}</div>
               </div>
-
-              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{font.description}</p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">{font.rating}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Download className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{font.downloads}</span>
-                  </div>
-                  <Badge variant="secondary">{font.category}</Badge>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <div className="text-right">
-                    {font.isFree ? (
-                      <div className="text-lg font-bold text-green-600">Free</div>
-                    ) : (
-                      <div>
-                        <div className="text-lg font-bold text-primary">${font.price}</div>
-                        {font.originalPrice && (
-                          <div className="text-xs text-muted-foreground line-through">${font.originalPrice}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <Link href={`/fonts/${font._id}`}>
-                    <Button>View Details</Button>
-                  </Link>
-                </div>
-              </div>
+              <Link href={`/fonts/${font._id}`}><Button>View</Button></Link>
             </div>
           </div>
         </CardContent>
       </Card>
     )
   }
-
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
+    <Card className="group hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <div className="flex justify-between">
           <div>
-            <CardTitle className="text-lg mb-1">{font.name}</CardTitle>
+            <CardTitle>{font.name}</CardTitle>
             <CardDescription>by {font.sellerName}</CardDescription>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onAddToWishlist(font._id!.toString())}
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          >
+          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100" onClick={() => onAddToWishlist(font._id!.toString())}>
             <Heart className="w-4 h-4" />
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {/* Font Preview */}
-        <div className="bg-card rounded-lg p-6 mb-4 border">
-          <div className="text-2xl font-bold mb-2" style={{ fontFamily: "system-ui" }}>
-            The quick brown fox
-          </div>
-          <div className="text-sm text-muted-foreground">
-            ABCDEFGHIJKLMNOPQRSTUVWXYZ
-            <br />
-            abcdefghijklmnopqrstuvwxyz
-            <br />
-            1234567890
-          </div>
+        <div className="bg-muted rounded-lg p-6 mb-4 h-40 flex items-center justify-center">
+          <p className="text-2xl truncate" style={{ fontFamily: `"${font.name}", system-ui` }}>The quick brown fox</p>
         </div>
-
-        <div className="flex flex-wrap gap-1 mb-4">
-          {font.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium">{font.rating}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Download className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{font.downloads}</span>
-            </div>
+        <div className="flex justify-between items-center">
+          <div className="flex gap-4">
+            <div className="flex items-center gap-1"><Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />{font.rating}</div>
+            <div className="flex items-center gap-1 text-muted-foreground"><Download className="w-4 h-4" />{font.downloads}</div>
           </div>
-          <div className="text-right">
-            {font.isFree ? (
-              <div className="text-lg font-bold text-green-600">Free</div>
-            ) : (
-              <div>
-                <div className="text-lg font-bold text-primary">${font.price}</div>
-                {font.originalPrice && (
-                  <div className="text-xs text-muted-foreground line-through">${font.originalPrice}</div>
-                )}
-              </div>
-            )}
-          </div>
+          <div className="text-lg font-bold">{font.isFree ? "Free" : `$${font.price}`}</div>
         </div>
-
-        <div className="flex space-x-2">
-          <Link href={`/fonts/${font._id}`} className="flex-1">
-            <Button className="w-full">View Details</Button>
-          </Link>
-          <Button variant="outline" size="icon">
-            <MessageCircle className="w-4 h-4" />
-          </Button>
-        </div>
+        <Link href={`/fonts/${font._id}`} className="mt-4"><Button className="w-full">View Details</Button></Link>
       </CardContent>
     </Card>
   )
 }
+
