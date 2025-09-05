@@ -7,10 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, Search, MoreVertical, Paperclip, DollarSign, Check, X, Download, MessageCircle, ShieldCheck } from "lucide-react"
+import { Send, Search, MoreVertical, Paperclip, DollarSign, Check, ShieldCheck, MessageCircle } from "lucide-react"
 import Link from "next/link"
 import type { ChatMessage } from "@/lib/models/User"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 
 interface Conversation {
   _id: string
@@ -26,7 +26,6 @@ interface Conversation {
 
 export default function ChatPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -50,6 +49,8 @@ export default function ChatPage() {
   useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation)
+      const interval = setInterval(() => fetchMessages(selectedConversation), 5000)
+      return () => clearInterval(interval)
     }
   }, [selectedConversation])
 
@@ -117,10 +118,7 @@ export default function ChatPage() {
 
   const handleApprovePayment = async (orderId: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/approve`, {
-        method: "POST",
-      })
-
+      const response = await fetch(`/api/orders/${orderId}/approve`, { method: "POST" })
       if (response.ok) {
         alert("Payment approved!")
         fetchMessages(selectedConversation!)
@@ -146,10 +144,7 @@ export default function ChatPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading conversations...</p>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     )
   }
@@ -158,7 +153,6 @@ export default function ChatPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
-          {/* Conversations List */}
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -172,58 +166,41 @@ export default function ChatPage() {
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="h-[500px]">
-                {conversations.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>No conversations yet</p>
-                  </div>
-                ) : (
-                  conversations.map((conversation) => {
-                    const otherParticipant = getOtherParticipant(conversation)
-                    return (
-                      <div
-                        key={conversation._id}
-                        className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
-                          selectedConversation === conversation._id ? "bg-muted" : ""
-                        }`}
-                        onClick={() => setSelectedConversation(conversation._id)}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback>{otherParticipant?.displayName?.[0] || "U"}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium truncate">
-                                {otherParticipant?.displayName || "Unknown User"}
-                              </h4>
-                              {conversation.unreadCount > 0 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {conversation.unreadCount}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {conversation.lastMessage?.message || "No messages yet"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(conversation.updatedAt).toLocaleDateString()}
-                            </p>
+                {conversations.map((conversation) => {
+                  const otherParticipant = getOtherParticipant(conversation)
+                  return (
+                    <div
+                      key={conversation._id}
+                      className={`p-4 border-b cursor-pointer hover:bg-muted/50 ${
+                        selectedConversation === conversation._id ? "bg-muted" : ""
+                      }`}
+                      onClick={() => setSelectedConversation(conversation._id)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback>{otherParticipant?.displayName?.[0] || "U"}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between">
+                            <h4 className="font-medium truncate">{otherParticipant?.displayName || "Unknown"}</h4>
+                            {conversation.unreadCount > 0 && (
+                              <Badge variant="destructive">{conversation.unreadCount}</Badge>
+                            )}
                           </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {conversation.lastMessage?.message || "..."}
+                          </p>
                         </div>
                       </div>
-                    )
-                  })
-                )}
+                    </div>
+                  )
+                })}
               </ScrollArea>
             </CardContent>
           </Card>
-
-          {/* Chat Area */}
-          <Card className="lg:col-span-3">
+          <Card className="lg:col-span-3 flex flex-col">
             {selectedConversation ? (
               <>
-                {/* Chat Header */}
                 <CardHeader className="border-b">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -238,7 +215,6 @@ export default function ChatPage() {
                           {getOtherParticipant(conversations.find((c) => c._id === selectedConversation)!)
                             ?.displayName || "Unknown User"}
                         </h3>
-                        <p className="text-sm text-muted-foreground">Online</p>
                       </div>
                     </div>
                     <Button variant="ghost" size="sm">
@@ -246,10 +222,8 @@ export default function ChatPage() {
                     </Button>
                   </div>
                 </CardHeader>
-
-                {/* Messages */}
-                <CardContent className="p-0">
-                  <ScrollArea className="h-[400px] p-4">
+                <CardContent className="flex-1 p-0">
+                  <ScrollArea className="h-full p-4">
                     <div className="space-y-4">
                       {messages.map((message) => (
                         <MessageBubble
@@ -264,8 +238,6 @@ export default function ChatPage() {
                     </div>
                   </ScrollArea>
                 </CardContent>
-
-                {/* Message Input */}
                 <div className="border-t p-4">
                   <div className="flex items-center space-x-2">
                     <Button variant="ghost" size="sm">
@@ -276,7 +248,6 @@ export default function ChatPage() {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                      className="flex-1"
                     />
                     <Button onClick={sendMessage} disabled={!newMessage.trim()}>
                       <Send className="w-4 h-4" />
@@ -285,13 +256,12 @@ export default function ChatPage() {
                 </div>
               </>
             ) : (
-              <CardContent className="flex items-center justify-center h-full">
-                <div className="text-center text-muted-foreground">
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="text-center">
                   <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
-                  <p>Choose a conversation from the list to start messaging</p>
+                  <p>Select a conversation to start chatting</p>
                 </div>
-              </CardContent>
+              </div>
             )}
           </Card>
         </div>
@@ -300,66 +270,54 @@ export default function ChatPage() {
   )
 }
 
-interface MessageBubbleProps {
+function MessageBubble({
+  message,
+  isOwn,
+  currentUser,
+  onApprovePayment,
+}: {
   message: ChatMessage
   isOwn: boolean
   currentUser: any
   onApprovePayment: (orderId: string) => void
-}
-
-function MessageBubble({ message, isOwn, currentUser, onApprovePayment }: MessageBubbleProps) {
+}) {
   const isPaymentRequest = message.messageType === "payment-request"
-
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[70%]`}>
-        <div
-          className={`rounded-lg p-3 ${
-            isOwn
-              ? "bg-primary text-primary-foreground"
-              : isPaymentRequest
-                ? "bg-yellow-50 border border-yellow-200"
-                : "bg-muted"
-          }`}
-        >
-          {isPaymentRequest ? (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <DollarSign className="w-4 h-4 text-yellow-600" />
-                <span className="font-medium text-yellow-800">Payment Request</span>
-              </div>
-              <p className="text-sm text-yellow-700">{message.message}</p>
-              <div className="text-lg font-bold text-yellow-800">${message.paymentRequest?.amount}</div>
-
-              {/* Seller's view */}
-              {currentUser?.role === "seller" && !isOwn && message.paymentRequest?.status === "pending" && (
-                <Button size="sm" onClick={() => onApprovePayment(message.paymentRequest!.orderId!.toString())}>
-                  <ShieldCheck className="w-4 h-4 mr-2" />
-                  Approve Payment
-                </Button>
-              )}
-
-              {/* Buyer's view */}
-              {isOwn && message.paymentRequest?.status === "pending" && (
-                <Badge variant="outline">Awaiting seller approval</Badge>
-              )}
-
-              {/* Both views after completion */}
-              {message.paymentRequest?.status === "paid" && (
-                <div className="flex items-center space-x-2 text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span className="text-sm font-medium">Payment Completed</span>
-                </div>
-              )}
+      <div
+        className={`rounded-lg p-3 max-w-[70%] ${
+          isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
+        }`}
+      >
+        {isPaymentRequest && message.paymentRequest ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 font-semibold">
+              <DollarSign className="w-4 h-4" />
+              <span>Payment Request</span>
             </div>
-          ) : (
-            <p className="text-sm">{message.message}</p>
-          )}
+            <p>{message.message}</p>
+            <p className="text-lg font-bold">${message.paymentRequest.amount}</p>
+            {currentUser?.role === "seller" && !isOwn && message.paymentRequest.status === "pending" && (
+              <Button size="sm" onClick={() => onApprovePayment(message.paymentRequest!.orderId!.toString())}>
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Approve Payment
+              </Button>
+            )}
+            {message.paymentRequest.status === "paid" && (
+              <div className="flex items-center gap-2 text-green-600 font-semibold">
+                <Check className="w-4 h-4" />
+                <span>Payment Completed</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p>{message.message}</p>
+        )}
+        <div className={`text-xs mt-1 ${isOwn ? "text-right" : "text-left"}`}>
+          {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </div>
-        <p className={`text-xs text-muted-foreground mt-1 ${isOwn ? "text-right" : "text-left"}`}>
-          {new Date(message.createdAt).toLocaleTimeString()}
-        </p>
       </div>
     </div>
   )
 }
+
