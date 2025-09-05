@@ -33,7 +33,7 @@ export interface User {
   // Notifications
   notifications: {
     wishlistPriceChanges: boolean
-    newFontsFromFollowed: boolean
+    newFontsFromFollowed: true
     discordWebhook?: string
   }
 
@@ -56,6 +56,11 @@ export interface Font {
   price: number
   originalPrice?: number
   isFree: boolean
+
+  // Promotions
+  salePrice?: number
+  promotionType?: "sale" | "giveaway"
+  promotionEnd?: Date
 
   // Files
   fontFiles: {
