@@ -6,7 +6,7 @@ import type { Font } from "@/lib/models/User"
 import { notifyNewFont } from "@/lib/discord"
 
 // Set the max duration for this specific route
-export const maxDuration = 60; // 60 seconds
+export const maxDuration = 60 // 60 seconds
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Map the received data to the format expected by the database schema
     const processedFontFiles = fontFiles.map(
-      (file: { format: string; dataUrl: string; size: number }) => ({
+      (file: { format: any; dataUrl: string; size: number }) => ({
         format: file.format,
         fileUrl: file.dataUrl, // Store the entire Data URL
         fileSize: file.size,
@@ -51,6 +51,9 @@ export async function POST(request: NextRequest) {
       price: fontData.isFree ? 0 : Number.parseFloat(fontData.price),
       originalPrice: fontData.originalPrice ? Number.parseFloat(fontData.originalPrice) : undefined,
       isFree: fontData.isFree,
+      salePrice: fontData.salePrice ? Number.parseFloat(fontData.salePrice) : undefined,
+      promotionType: fontData.promotionType,
+      promotionEnd: fontData.promotionEnd ? new Date(fontData.promotionEnd) : undefined,
       fontFiles: processedFontFiles,
       previewImages: processedPreviewImages,
       supportedLanguages: fontData.supportedLanguages,
@@ -84,11 +87,9 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Font upload error:", error)
-    // Handle potential JSON body size errors, which are more likely with Data URLs
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: "Request body is too large or malformed." }, { status: 413 })
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-
