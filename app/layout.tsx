@@ -1,11 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
 import ClientLayout from "./ClientLayout"
-import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "FontMarket - Premium Font Marketplace",
-  description: "Discover and purchase premium fonts from talented designers worldwide. Support multiple languages: Thai, English, and Chinese.",
+  title: "ChayapholSmile Fonts - Premium Font Marketplace",
+  description:
+    "Discover and purchase premium fonts from talented designers worldwide. A marketplace by ChayapholSmile.",
 }
 
 export default function RootLayout({
@@ -15,3 +15,7 @@ export default function RootLayout({
 }>) {
   return <ClientLayout>{children}</ClientLayout>
 }
+
+
+import './globals.css'
+
