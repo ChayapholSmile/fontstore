@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Upload, X, FileText, DollarSign, Globe, Tag } from "lucide-react"
+import { Upload, X, FileText, DollarSign, Globe, Tag, Timer } from "lucide-react"
 import Link from "next/link"
 
 // Helper function to convert a file to a Data URL
@@ -35,6 +34,9 @@ export default function UploadFontPage() {
     isFree: false,
     tags: [] as string[],
     supportedLanguages: [] as string[],
+    promotionType: "none",
+    promotionEnd: "",
+    salePrice: "",
   })
   const [files, setFiles] = useState<File[]>([])
   const [previewImages, setPreviewImages] = useState<File[]>([])
@@ -110,28 +112,36 @@ export default function UploadFontPage() {
     setSuccess("")
 
     try {
-      // Validate form
       if (!formData.name || !formData.description || !formData.category) {
         throw new Error("Please fill in all required fields")
       }
+      if (files.length === 0) throw new Error("Please upload at least one font file")
+      if (!formData.isFree && !formData.price) throw new Error("Please set a price for paid fonts")
+      if (formData.promotionType === "sale" && !formData.salePrice) throw new Error("Please set a sale price")
+      if (formData.promotionType !== "none" && !formData.promotionEnd)
+        throw new Error("Please set a promotion end date")
 
-      if (files.length === 0) {
-        throw new Error("Please upload at least one font file")
+      const fontFilesData = (
+        await Promise.all(
+          files.map(async (file) => {
+            const format = file.name.split(".").pop()?.toLowerCase()
+            if (!format || !["otf", "ttf", "woff", "woff2"].includes(format)) {
+              console.warn(`Skipping file with invalid format: ${file.name}`)
+              return null
+            }
+            return {
+              name: file.name,
+              size: file.size,
+              format,
+              dataUrl: await fileToDataUrl(file),
+            }
+          }),
+        )
+      ).filter(Boolean)
+
+      if (fontFilesData.length === 0) {
+        throw new Error("No valid font files were provided. Supported formats: otf, ttf, woff, woff2.")
       }
-
-      if (!formData.isFree && !formData.price) {
-        throw new Error("Please set a price for paid fonts")
-      }
-
-      // Convert files to Data URLs
-      const fontFilesData = await Promise.all(
-        files.map(async (file) => ({
-          name: file.name,
-          size: file.size,
-          format: file.name.split(".").pop()?.toLowerCase(),
-          dataUrl: await fileToDataUrl(file),
-        })),
-      )
 
       const previewImagesData = await Promise.all(
         previewImages.map(async (file) => ({
@@ -142,27 +152,24 @@ export default function UploadFontPage() {
       )
 
       const payload = {
-        fontData: formData,
+        fontData: {
+          ...formData,
+          promotionType: formData.promotionType === "none" ? undefined : formData.promotionType,
+        },
         fontFiles: fontFilesData,
         previewImages: previewImagesData,
       }
 
       const response = await fetch("/api/fonts/upload", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
 
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Upload failed")
-      }
+      if (!response.ok) throw new Error(data.error || "Upload failed")
 
       setSuccess("Font uploaded successfully! It will be reviewed before going live.")
-      // Reset form
       setFormData({
         name: "",
         description: "",
@@ -172,6 +179,9 @@ export default function UploadFontPage() {
         isFree: false,
         tags: [],
         supportedLanguages: [],
+        promotionType: "none",
+        promotionEnd: "",
+        salePrice: "",
       })
       setFiles([])
       setPreviewImages([])
@@ -199,14 +209,12 @@ export default function UploadFontPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-
             {success && (
               <Alert>
                 <AlertDescription>{success}</AlertDescription>
               </Alert>
             )}
 
-            {/* Basic Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -227,7 +235,6 @@ export default function UploadFontPage() {
                       required
                     />
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
                     <Select
@@ -238,16 +245,15 @@ export default function UploadFontPage() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.value} value={category.value}>
-                            {category.label}
+                        {categories.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="description">Description *</Label>
                   <Textarea
@@ -262,7 +268,6 @@ export default function UploadFontPage() {
               </CardContent>
             </Card>
 
-            {/* Pricing */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -276,11 +281,10 @@ export default function UploadFontPage() {
                   <Checkbox
                     id="isFree"
                     checked={formData.isFree}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isFree: checked as boolean })}
+                    onCheckedChange={(c) => setFormData({ ...formData, isFree: c as boolean })}
                   />
                   <Label htmlFor="isFree">This is a free font</Label>
                 </div>
-
                 {!formData.isFree && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -295,7 +299,6 @@ export default function UploadFontPage() {
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       />
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="originalPrice">Original Price (Optional)</Label>
                       <Input
@@ -313,7 +316,60 @@ export default function UploadFontPage() {
               </CardContent>
             </Card>
 
-            {/* Language Support */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Timer className="w-5 h-5" />
+                  <span>Promotions & Timed Release</span>
+                </CardTitle>
+                <CardDescription>Set up a sale or a limited-time giveaway.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="promotionType">Promotion Type</Label>
+                    <Select
+                      value={formData.promotionType}
+                      onValueChange={(value) => setFormData({ ...formData, promotionType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select promotion type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="sale">Sale</SelectItem>
+                        <SelectItem value="giveaway">Giveaway</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="promotionEnd">Promotion End Date</Label>
+                    <Input
+                      id="promotionEnd"
+                      type="datetime-local"
+                      disabled={formData.promotionType === "none"}
+                      value={formData.promotionEnd}
+                      onChange={(e) => setFormData({ ...formData, promotionEnd: e.target.value })}
+                    />
+                  </div>
+                </div>
+                {formData.promotionType === "sale" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="salePrice">Sale Price (USD)</Label>
+                    <Input
+                      id="salePrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="14.99"
+                      value={formData.salePrice}
+                      onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -324,21 +380,20 @@ export default function UploadFontPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {languages.map((language) => (
-                    <div key={language.id} className="flex items-center space-x-2">
+                  {languages.map((lang) => (
+                    <div key={lang.id} className="flex items-center space-x-2">
                       <Checkbox
-                        id={language.id}
-                        checked={formData.supportedLanguages.includes(language.id)}
-                        onCheckedChange={() => handleLanguageToggle(language.id)}
+                        id={lang.id}
+                        checked={formData.supportedLanguages.includes(lang.id)}
+                        onCheckedChange={() => handleLanguageToggle(lang.id)}
                       />
-                      <Label htmlFor={language.id}>{language.name}</Label>
+                      <Label htmlFor={lang.id}>{lang.name}</Label>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Tags */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -353,7 +408,7 @@ export default function UploadFontPage() {
                     <Badge
                       key={tag}
                       variant={formData.tags.includes(tag) ? "default" : "outline"}
-                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                      className="cursor-pointer"
                       onClick={() => handleTagToggle(tag)}
                     >
                       {tag}
@@ -364,7 +419,6 @@ export default function UploadFontPage() {
               </CardContent>
             </Card>
 
-            {/* File Uploads */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -374,35 +428,27 @@ export default function UploadFontPage() {
                 <CardDescription>Upload your font files and preview images</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Font Files */}
                 <div className="space-y-4">
                   <Label>Font Files *</Label>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                    <div className="text-center">
-                      <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Upload font files</p>
-                        <p className="text-xs text-muted-foreground">
-                          Supported formats: OTF, TTF, WOFF, WOFF2 (Max 10MB each)
-                        </p>
-                      </div>
-                      <Input
-                        type="file"
-                        multiple
-                        accept=".otf,.ttf,.woff,.woff2"
-                        onChange={(e) => handleFileUpload(e, "font")}
-                        className="mt-4"
-                      />
-                    </div>
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                    <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-sm font-medium">Upload font files</p>
+                    <p className="text-xs text-muted-foreground">OTF, TTF, WOFF, WOFF2 (Max 10MB each)</p>
+                    <Input
+                      type="file"
+                      multiple
+                      accept=".otf,.ttf,.woff,.woff2"
+                      onChange={(e) => handleFileUpload(e, "font")}
+                      className="mt-4"
+                    />
                   </div>
-
                   {files.length > 0 && (
                     <div className="space-y-2">
                       <Label>Uploaded Font Files:</Label>
-                      {files.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded">
-                          <span className="text-sm">{file.name}</span>
-                          <Button variant="ghost" size="sm" onClick={() => removeFile(index, "font")}>
+                      {files.map((f, i) => (
+                        <div key={i} className="flex items-center justify-between p-2 border rounded">
+                          <span className="text-sm">{f.name}</span>
+                          <Button variant="ghost" size="sm" onClick={() => removeFile(i, "font")}>
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
@@ -410,36 +456,27 @@ export default function UploadFontPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Preview Images */}
                 <div className="space-y-4">
                   <Label>Preview Images</Label>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                    <div className="text-center">
-                      <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Upload preview images</p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG, WebP (Max 5MB each, recommended: 1200x800px)
-                        </p>
-                      </div>
-                      <Input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e, "preview")}
-                        className="mt-4"
-                      />
-                    </div>
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                    <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-sm font-medium">Upload preview images</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, WebP (Max 5MB each)</p>
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, "preview")}
+                      className="mt-4"
+                    />
                   </div>
-
                   {previewImages.length > 0 && (
                     <div className="space-y-2">
                       <Label>Uploaded Preview Images:</Label>
-                      {previewImages.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded">
-                          <span className="text-sm">{file.name}</span>
-                          <Button variant="ghost" size="sm" onClick={() => removeFile(index, "preview")}>
+                      {previewImages.map((f, i) => (
+                        <div key={i} className="flex items-center justify-between p-2 border rounded">
+                          <span className="text-sm">{f.name}</span>
+                          <Button variant="ghost" size="sm" onClick={() => removeFile(i, "preview")}>
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
@@ -450,7 +487,6 @@ export default function UploadFontPage() {
               </CardContent>
             </Card>
 
-            {/* Submit */}
             <div className="flex justify-end space-x-4">
               <Link href="/dashboard">
                 <Button variant="outline">Cancel</Button>
@@ -465,3 +501,4 @@ export default function UploadFontPage() {
     </div>
   )
 }
+
