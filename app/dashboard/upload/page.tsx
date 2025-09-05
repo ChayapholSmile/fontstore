@@ -184,38 +184,6 @@ export default function UploadFontPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">F</span>
-              </div>
-              <span className="text-xl font-bold">FontMarket</span>
-            </Link>
-
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/upload" className="text-primary font-medium">
-                Upload Font
-              </Link>
-              <Link href="/dashboard/fonts" className="text-muted-foreground hover:text-foreground transition-colors">
-                My Fonts
-              </Link>
-            </nav>
-
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
